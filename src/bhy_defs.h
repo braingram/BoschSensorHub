@@ -106,9 +106,9 @@ extern "C" {
 /*************************** Sensor macros   *****************************/
 /* Test for an endian machine */
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define LITTLE_ENDIAN 1
+#define BHY_LITTLE_ENDIAN 1
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define BIG_ENDIAN    1
+#define BHY_BIG_ENDIAN    1
 #else
 #error "Code does not support Endian format of the processor"
 #endif
@@ -133,6 +133,8 @@ extern "C" {
 
 #define BHY_E_PRODUCT_ID_MISMATCH                  INT8_C(-91)
 #define BHY_E_UNKNOWN_ERROR                        INT8_C(-99)
+
+#define BHY_E_PAGE_SELECT_TIMEOUT                  INT8_C(-100)
 
 /** BHY I2C Address */
 #define BHY_I2C_ADDR                               UINT8_C(0x28)
@@ -423,7 +425,7 @@ typedef union
     uint16_t value;
     struct
     {
-        #if LITTLE_ENDIAN == 1
+        #if BHY_LITTLE_ENDIAN == 1
         // still activity ended
         uint8_t still_ended : 1;
         // walk activity ended
@@ -453,7 +455,7 @@ typedef union
         uint8_t tilting_started : 1;
         // reserved
         uint8_t  : 2;
-        #elif BIG_ENDIAN == 1
+        #elif BHY_BIG_ENDIAN == 1
         // still activity ended
         uint8_t still_started : 1;
         // walk activity ended
@@ -495,10 +497,10 @@ typedef struct
     {
         struct
         {
-        #if LITTLE_ENDIAN == 1
+        #if BHY_LITTLE_ENDIAN == 1
             uint8_t info;
             uint8_t data;
-        #elif BIG_ENDIAN == 1
+        #elif BHY_BIG_ENDIAN == 1
             uint8_t data;
             uint8_t info;
         #endif

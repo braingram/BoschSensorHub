@@ -2095,6 +2095,9 @@ int8_t BHYSensor::pageSelect(bhyPage page, uint8_t parameter)
     }
     if (status < 0)
         return status;
+
+    // device is not ready so page select failed
+    return BHY_E_PAGE_SELECT_TIMEOUT;
 }
 
 int8_t BHYSensor::getPhysicalSensorStatus(bhyPhysicalStatus *accel, bhyPhysicalStatus *gyro, bhyPhysicalStatus *mag)
