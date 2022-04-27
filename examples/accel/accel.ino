@@ -52,6 +52,11 @@ void setup()
 
     bhi160.begin(BHY_I2C_ADDR2);
 
+    bhyChipStatus status;
+    bhi160.getChipStatus(&status);
+    Serial.print("Chip status: 0x");
+    Serial.println(status.value, HEX);
+
     // Check to see if something went wrong.
     if (!checkSensorStatus())
         return;
@@ -64,12 +69,23 @@ void setup()
     if (!checkSensorStatus())
         return;
 
+    bhi160.getChipStatus(&status);
+    Serial.print("Chip status: 0x");
+    Serial.println(status.value, HEX);
+
     intrToggled = false; /* Clear interrupt status received during firmware upload */
     waitForBhyInterrupt();  /* Wait for meta events from boot up */
     Serial.println("Firmware booted");
+    delay(100);
 
     /* Install a metaevent callback handler and a timestamp callback handler here if required before the first run */
     bhi160.run(); /* The first run processes all boot events */
+    delay(100);
+
+    bhi160.getChipStatus(&status);
+    Serial.print("Chip status: 0x");
+    Serial.println(status.value, HEX);
+
 
     /* Link callbacks and configure desired virtual sensors here */
     if (bhi160.installSensorCallback(BHY_VS_ACCELEROMETER, true, accelerometerHandler))
@@ -82,13 +98,26 @@ void setup()
     else
         Serial.println("Accelerometer callback installed");
 
-    if (bhi160.configVirtualSensor(BHY_VS_ACCELEROMETER, true, BHY_FLUSH_ALL, 25, 0, 0, 0))
+    delay(100);
+
+    bool retry = true;
+    while (retry)
     {
-        Serial.println("Failed to enable virtual sensor (" + bhi160.getSensorName(
-                           BHY_VS_ACCELEROMETER) + "). Loaded firmware may not support requested sensor id.");
+        if (bhi160.configVirtualSensor(BHY_VS_ACCELEROMETER, true, BHY_FLUSH_ALL, 25, 0, 0, 0))
+        {
+            Serial.println("Failed to enable virtual sensor (" + bhi160.getSensorName(
+                               BHY_VS_ACCELEROMETER) + "). Loaded firmware may not support requested sensor id.");
+            bhi160.getChipStatus(&status);
+            Serial.print("Chip status: 0x");
+            Serial.println(status.value, HEX);
+            delay(500);
+        }
+        else
+        {
+            Serial.println(bhi160.getSensorName(BHY_VS_ACCELEROMETER) + " virtual sensor enabled");
+            retry = false;
+        }
     }
-    else
-        Serial.println(bhi160.getSensorName(BHY_VS_ACCELEROMETER) + " virtual sensor enabled");
 
 
     if (checkSensorStatus())
@@ -96,6 +125,7 @@ void setup()
 
 }
 
+unsigned long last_update = 0;
 void loop()
 {
     if (intrToggled)
@@ -108,6 +138,18 @@ void loop()
             Serial.println(String(accel_x) + "," + String(accel_y) + "," + String(accel_z) + "," + String(status));
             newAccelerometerData = false;
         }
+        last_update = millis();
+    }
+    if (Serial.available() | (millis() - last_update > 1000UL))
+    {
+        Serial.print("Fifo watermark: ");
+        Serial.println(bhi160.getFifoWatermark(true));
+        bhyChipStatus status;
+        bhi160.getChipStatus(&status);
+        Serial.print("Chip status: 0x");
+        Serial.println(status.value, HEX);
+        last_update = millis();
+        while (Serial.available()) Serial.read();
     }
 }
 
